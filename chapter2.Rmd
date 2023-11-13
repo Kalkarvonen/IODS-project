@@ -1,10 +1,6 @@
 # Regression and model validation
 
-*Describe the work you have done this week and summarize your learning.*
-
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using.
+- First we read in the dataset
 ```{r}
 students2014 <- read.csv("C:/Users/Kalka/OneDrive/Desktop/Random/School/Open_Data/IODS-project/learning2014.csv")
 ## This dataset consists of information from 166 people on 7 different parameters including their gender,age, and certain learning questionnaire parameters. The point of the questionnaire was to see how the students course results correlate with their learning approaches and attitude towards a certain statistics course. Deep stra and surf correlate to study skill dimensions 
@@ -63,7 +59,7 @@ my_model2 <- lm(Points ~ attitude, data = students2014)
 my_model2
 plot(my_model2,which = c(1,2,5),par(mfrow=c(2,2)))
 ```
-```
+
 - Based on the course book fig 3.4a the Residuals against Fitted values plot shows that our fitted model should be of appropriate quality as there is no clear curvature in our values which would indicate that the model would need transformation.
 - for the standardized residuals we see some potential outliers on the left side which may be the reason why our R-squared is so low. Perhaps there are people who get low scores despite having a good attitude score which lower the predictability ?
 ```{r}
