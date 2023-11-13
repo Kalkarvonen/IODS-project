@@ -6,10 +6,6 @@ output:
 
 # About the project
 
-*Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you should use R Markdown syntax.*
-
-## my comments
-
 **Happy** *to be in the course and am looking forward to learning about how to link my stuff to github as I already have some knowledge learning from machine learning courses and multiomics* *I did not really go too deep into the course book as I have previous experience with R, but it is good that there is a more up to date book for the course although I believe that lot of coding is learned through just googling the problems and more recently by including ai into syntax troubleshooting*
 
 [***https://kalkarvonen.github.io/IODS-project/***](https://kalkarvonen.github.io/IODS-project/){.uri}
