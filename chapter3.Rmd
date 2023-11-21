@@ -4,7 +4,7 @@ author: "Kalle Karvonen"
 date: "2023-11-20"
 output: html_document
 ---
-
+# Logistic Regression
 ```{r}
 #using the file I made in data wrangling
 getwd()
@@ -115,3 +115,7 @@ False positive rate  = 0/259 = 0 --> 0%
 False negative rate 110/111 = 0.99 --> 99%
 
 - All in all both of these models perform rather badly and you could easily perform better by yourself so these models should be tweaked if they would ever to be used. 
+```{r}
+date()
+```
+

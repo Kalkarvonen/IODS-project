@@ -19,14 +19,14 @@ free_cols <- c("paid","failures","absences","G1","G2","G3")
 join_cols <- setdiff(colnames(por), free_cols)
 
 # join the two data sets by the selected identifiers
-math_por <- inner_join(math, por, by = join_cols,suffix = c(".math",".por"))
+math_por <- inner_join(mat, por, by = join_cols,suffix = c(".math",".por"))
 
 #Check the data
 
 glimpse(math_por)
 
 # Getting rid of duplicates by using the if else structure from 3.3
-
+alc <- select(math_por, all_of(join_cols))
 # for every column name not used for joining...
 for(col_name in free_cols) {
   # select two columns from 'math_por' with the same original name
