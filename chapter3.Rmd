@@ -1,0 +1,117 @@
+---
+title: "Logistic Regression"
+author: "Kalle Karvonen"
+date: "2023-11-20"
+output: html_document
+---
+
+```{r}
+#using the file I made in data wrangling
+getwd()
+alc <- read.csv("alc.csv")
+colnames(alc)
+
+```
+- This dataset consists of the variables shown above taken from students of a math and portuguese class and their performance. Data also has alcohol consumption added to it
+- Daily alcohol consumption Dalc and Weekend alkohol consumption Walc from which alc_use is calculated by taking the average of the two. high_use is True if over the average is over 2 and False if under 2 
+- We will use this data to study the relationship between alcohol consumption and other variables in the data
+
+For example if we expect men to be more likely to consume high amounts of alcohol and we want to use this data to test if there is a difference between alcohol consumption (high or low between the genders) we could do it like this
+
+```{r}
+# access the tidyverse packages dplyr and ggplot2
+library(dplyr); library(ggplot2)
+# First summarize the data a bit to see what to expect
+alc %>% group_by(sex,high_use) %>% summarise(count = n())
+#Based on this we could already see that there will be a difference 
+
+# Plot the differences
+g1 <- ggplot(data = alc, aes(x=high_use))
+# draw a bar plot of high_use by sex
+g1+geom_bar()+facet_wrap("sex")
+```
+-Based on this we could say that more men consume high amounts of alcohol when compared to women"
+
+
+-similarily here is a different type of plot for alcohol usage (high or low) and age
+- it is expected that alcohol consumption should be low for underage people and that we get more high alcohol use people with higher ages
+
+```{r}
+alc %>% group_by(high_use,age) %>% summarise(count = n())
+# initialize a plot of high_use and age
+g2 <- ggplot(alc,aes(x=age,y=high_use))
+g2+geom_boxplot()+ggtitle("High Alcohol use by age")
+# define the plot as a box plot and draw it
+```
+- Although it is hard to say from this data as the ages are pretty uniformly distributed and numbers would be much better indicators it seems that older men consume higher amounts of alcohol tho this data is pretty unusable to make any conclusions from
+
+
+
+
+- Now we can do logistic regression based analysis on these two examples.
+
+```{r}
+
+# find the model with glm()
+m <- glm(high_use ~ sex, data = alc, family = "binomial")
+n <- glm(high_use~age,data=alc,family="binomial")
+
+# print out a summary of the model
+summary(m)
+summary(n)
+# print out the coefficients of the model
+coef(m)
+coef(n)
+```
+
+- as you can see above both sex and age seem to have some capability of predicting high alcohol use. Note that in the sex part the model only shows the Males because of how R handles categorical variables by performing dummy coding. In this case the sexF has been used as a reference class for sexM
+
+all the p values in both tests (age and sex) show that there is a statistical significance although age does not seem to be so strong predictor of high alcohol use as sex and it is probably not a very good predictor to use.
+
+- How about odds ratio and its confidence interval.
+```{r}
+# compute odds ratios (OR)
+ORm <- coef(m) %>% exp
+
+# compute confidence intervals (CI)
+CIm <- confint(m)
+
+# print out the odds ratios with their confidence intervals
+cbind(ORm, CIm)
+
+```
+- Here from the odd ratios we see that   the odds ratios do not go in the confidence interval showing statistical significance. from the odds ratio we can also show correlation with the intercept ( alcohol usage) namely the positive odds ratio of 2.5 tells us that high alcohol usage is 2.5 times more probable on males than females ( females used as a reference state)
+
+```{r}
+ORn <- coef(n) %>% exp
+CIn <- confint(n)
+cbind(ORn,CIn)
+```
+- similarily to above here we also see some correlation between age and high alcohol consumption but this time only 1.2 times as high. Because we are talking of continuous variable such as age every increase in age should raise the odds of being a high alcohol user by 1.2.  When we think about it this is not feasible since alcohol consumption does not grow exponentially as we age. so Age might not be a good model even though in this case it is statistically significant. Also to note is that this cohort was partly underage and they cannot legally buy alcohol so data might not be reliable in that sense.
+
+- Testing the predictitive power of these modesl
+```{r}
+probabilities_m <- predict(m, type = "response")
+probabilities_n <- predict(n,type = "response")
+alc <- mutate(alc, probability_sex = probabilities_m)
+alc <- mutate(alc, probability_age = probabilities_n)
+#now we have the predictions here and we can use them to predict a treshold of for example 0.5
+alc <- mutate(alc, predicted_high_use_sex = ifelse(probability_sex > 0.5, TRUE, FALSE))
+alc <- mutate(alc, predicted_high_use_age = ifelse(probability_age > 0.5, TRUE, FALSE))
+
+# Now we can print these into their own 2x2 crosstables to see how they worked
+Alcohol_Sex <- table(High_Use=alc$high_use, Prediction=alc$predicted_high_use_sex)
+print(Alcohol_Sex)
+```
+- For the Sex determining alcohol consumption the model seems to give a few false positives, but it also mislabels a lot of true cases into being false. Thus this model is good at only predicting low alcohol usage.
+False positive rate  = 7/259 = 0.027 --> 2.7%
+False negative rate 78/111 = 0.70 --> 70%
+```{r}
+Alcohol_Age <- table(High_Use=alc$high_use, Prediction=alc$predicted_high_use_age)
+print(Alcohol_Age)
+```
+- This model seems to perform even worse with it only labeling 1 true case correctly but it also labeled all false cases correctly. Though we can probably say that this model predicts almost everything to be False leading it to be correct in the false cases and nothing else.
+False positive rate  = 0/259 = 0 --> 0%
+False negative rate 110/111 = 0.99 --> 99%
+
+- All in all both of these models perform rather badly and you could easily perform better by yourself so these models should be tweaked if they would ever to be used. 
