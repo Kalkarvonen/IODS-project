@@ -1,0 +1,99 @@
+---
+title: "Clustering and classification"
+author: "Kalle Karvonen"
+date: "2023-11-27"
+output: html_document
+---
+- Loading in the Boston dataset, which contains the housing values in suburbs of Boston in 506 rows of data and 14 different columns of variables such as crime rate median value,age and proportion of blacks by town.
+```{r}
+library(MASS)
+library(ggplot2)
+data("Boston")
+dim(Boston)
+str(Boston)
+```
+-Here we can summarize the variables on the data to see a bit how the values line up. We can also perform a pairwise analysis on the data to visualize it and the different variables effect on others. The data seems to have a high variability between datas and no clear distributions can be clearly seen by eye
+```{r}
+summary(Boston)
+pairs(Boston)
+```
+- This data above can be pretty hard to interpret due to it having so large amount of plots so we could for example do this to see how the plots look for three variables such as  the amount of crime/capita, amount of blacks in the neighbourhood and the median property value. 
+
+-Based on this we could make some interpetations such as that the crime rate correlates negatively with the median value and that there seems to be no clear visual indication that the amount of blacks would correlate with the amount of crime or median value of owner occupied homes.
+
+```{r}
+pairs(Boston[,c(1,12,14)])
+```
+-Another good way to show any correlations on the data would be to use the correlation matrix which can be used to show correlation between variables
+```{r}
+# calculate the correlation matrix and round it
+cor_matrix <- cor(Boston) 
+
+# print the correlation matrix
+print(cor_matrix)
+
+# visualize the correlation matrix
+library(corrplot)
+corrplot(cor_matrix, method="circle")
+```
+- there are some variables that seem to correlate with each other.
+
+
+- This dataset could use some scaling to make the distributions of the data a bit more readable. so lets perform scaling
+
+```{r}
+# center and standardize variables by using the mean as the center point
+boston_scaled <- as.data.frame(scale(Boston))
+
+# summaries of the variables
+summary(Boston)
+summary(boston_scaled)
+
+```
+- now we see that the values are scaled so that all the dataframes show identical mean of zero meaning they have been centered around it.Basically this means we now have some negative values but overall we should have less outliers.
+
+-Now we can add categorical variables to the crime rates of our scaled data by first doing quantiles of values and then labeling these quantiles. 
+```{r}
+# c reating the quantile bins for our labeling
+bins <- quantile(boston_scaled$crim)
+bins
+#creating a vector label which contains our desired labels
+label <- c("low","med_low","med_high","high")
+# create a categorical variable 'crime'
+crime <- cut(boston_scaled$crim, breaks = bins, include.lowest = TRUE,labels = label)
+
+# look at the table of the new factor crime
+table(crime)
+# now we have a uniform distribution of crime rate factors
+# remove original crim from the dataset
+boston_scaled <- dplyr::select(boston_scaled, -crim)
+
+# add the new categorical value to scaled data
+boston_scaled <- data.frame(boston_scaled, crime)
+
+```
+
+- Now we can use the created scaled data with categorical valuables to create training and test data for labeling purposes by dividing our dataset to 80% 20% split between training and test sets
+- we also save the correct classes from our test data for quality control later on and remove the variable crime from the test data
+-So we use 80% of the data to train our model and 20% of data to do a test to see how accurate our model is.
+```{r}
+# number of rows in the Boston dataset 
+n <- nrow(boston_scaled)
+
+# choose randomly 80% of the rows
+ind <- sample(n,  size = n * 0.8)
+
+# create train set
+train <- boston_scaled[ind,]
+
+# create test set 
+test <- boston_scaled[-ind,]
+
+# save the correct classes from test data
+correct_classes <- test$crime
+
+# remove the crime variable from test data so that we can use our model to label it
+test <- dplyr::select(test, -crime)
+```
+
+## Linear discrimiannt
