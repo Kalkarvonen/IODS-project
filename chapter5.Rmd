@@ -1,0 +1,72 @@
+---
+title: "chapter5"
+author: "Kalle Karvonen"
+date: "2023-12-04"
+output: html_document
+---
+# Dimensionality reduction
+
+- In this chapter we are working with the human dataset from https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/human2.csv"
+
+- This dataset consists of certain welfare parameters of countries ranked, these include Maternal mortality rate education rate and gender equality parameters.
+
+ "GNI" = Gross National Income per capita.
+
+"Life.Exp" = Life expectancy at birth
+
+"Edu.Exp" = Expected years of schooling 
+
+"Mat.Mor" = Maternal mortality ratio
+
+"Ado.Birth" = Adolescent birth rate
+
+"Parli.F" = Percetange of female representatives in parliament
+
+"Edu2.FM" = Proportion of females with at least secondary education divided
+by males
+"Labo.FM" = Proportion of females in the labour force divided by males
+
+
+
+```{r}
+human <-read.csv("C:/Users/Kalka/OneDrive/Desktop/Random/School/Open_Data/IODS-project/data/human.csv")
+
+# moving country names to rownames to a new dataframe human_
+library(tibble)
+human_ <- column_to_rownames(human, "Country")
+summary(human_)
+pairs(human_)
+```
+
+- From these plots you can see some skewing in data especially with GNI and the variables such as Ado.Birth  which would seem to indicate that Adolescent birth is more common in countries with low GNI.
+- This data could use some PCA
+
+#### PCA
+```{r}
+# perform principal component analysis
+pca_human <- prcomp(human_)
+
+# draw a biplot of the principal component representation and the original variables
+biplot(pca_human, choices = 1:2,cex=0.8)
+
+```
+```{r}
+# create and print out a summary of pca_human
+s <- summary(pca_human)
+
+
+# rounded percentanges of variance captured by each PC
+pca_pr <- round(1*s$importance[2, ], digits = 5)
+# create and print out a summary of pca_human
+s <- summary(pca_human)
+
+
+# rounded percentanges of variance captured by each PC
+pca_pr <- round(1*s$importance[2, ], digits = 5)
+```
+
+- Based on this unscaled data it is pretty hard to see anything on a biplot and the plot would need to be tinkered with. Howere we can quite clearly see that a lot of variables plot around the same area.
+
+- based on the summary it seems that for this unscaled data the first principal component explains almost all of the variance.
+
+

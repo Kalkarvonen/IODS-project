@@ -31,4 +31,20 @@ gii <- gii %>%
 
 human <- inner_join(hd, gii, by = "Country")
 
+str(human)
+dim(human)
+summary(human)
+# Dimensionality is correct with 195 rows and 19 columns of data 
+# Data consists of countries and their gross national income alongside some other data
+# Regarding the countrys welfare such as life expectancy and maternal mortality
+# Removing unneseccary columns
+human <- human %>%
+  select("Country", "Edu2.FM", "Labo.FM", "Edu.Exp", "Life.Exp", "GNI", "Mat.Mor", "Ado.Birth", "Parli.F")
+# Removing missing values
+human <- na.omit(human)
+# We notice that the last rows in country variable relate to areas instead of countries so we remove them
+# last 7 rows are areas instead of countries
+human <- human %>%
+  slice(1:(nrow(human) - 7))
+#saving the new data
 write.csv(human, "C:/Users/Kalka/OneDrive/Desktop/Random/School/Open_Data/IODS-project/data/human.csv", row.names = FALSE)
