@@ -4,7 +4,7 @@ author: "Kalle Karvonen"
 date: "2023-12-04"
 output: html_document
 ---
-# Dimensionality reduction
+# Chapter 5 Dimensionality reduction
 
 - In this chapter we are working with the human dataset from https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/human2.csv"
 
@@ -32,7 +32,10 @@ by males
 human <-read.csv("C:/Users/Kalka/OneDrive/Desktop/Random/School/Open_Data/IODS-project/data/human.csv")
 
 # moving country names to rownames to a new dataframe human_
+library(dplyr)
+library(readr)
 library(tibble)
+library(GGally)
 human_ <- column_to_rownames(human, "Country")
 summary(human_)
 pairs(human_)
@@ -50,6 +53,16 @@ pca_human <- prcomp(human_)
 biplot(pca_human, choices = 1:2,cex=0.8)
 
 ```
+- Based on this unscaled data it is pretty hard to see anything on a biplot and the plot would need to be tinkered with. Howere we can quite clearly see that a lot of variables plot around the same area. In this type of plots the arrows would be useful to determine certain properties of our data
+
+- The angle between the arrows can be interpreted as the correlation between the variables.
+
+- The angle between a variable and a PC axis can be interpreted as the correlation between the two
+
+- The length of the arrows are proportional to the standard deviations of the variables.
+
+- As you can see above the arrows aside from GNI are very hard to see and that would mean that there is a large standard deviation in GNI
+- All of the arrows seem straight so this would not show any correlations
 ```{r}
 # create and print out a summary of pca_human
 s <- summary(pca_human)
@@ -57,16 +70,73 @@ s <- summary(pca_human)
 
 # rounded percentanges of variance captured by each PC
 pca_pr <- round(1*s$importance[2, ], digits = 5)
+pca_pr
+```
+
+
+
+- based on the summary it seems that for this unscaled data the first principal component explains almost all of the variance.
+
+- what if we standardize the variables
+```{r}
+#scaling the data
+human_std <- scale(human_)
+summary(human_std)
+```
+- basic scaling by using means. Now lets use the scaled data on the same analysis as before
+
+```{r}
+# perform principal component analysis
+pca_human_std <- prcomp(human_std)
+
+# draw a biplot of the principal component representation and the original variables
+biplot(pca_human_std, choices = 1:2,cex=0.8)
+```
+- Now that the data has been Scaled around the center(mean) we can actually determine the arrows that represent the original value unlike the first one where it was pracically impossible to differentiate them. For example some arrows show an angle between them --> correlation and they generally are longer and in different areas instead of clustered together. For example LaboFM and Parli F would seem to correlate with a lot of variables.
+- How about the amount of variability captured
+```{r}
 # create and print out a summary of pca_human
-s <- summary(pca_human)
+s <- summary(pca_human_std)
 
 
 # rounded percentanges of variance captured by each PC
-pca_pr <- round(1*s$importance[2, ], digits = 5)
+pca_pr_std <- round(1*s$importance[2, ], digits = 5)
+pca_pr_std
+```
+On the scaled data we can actually see that the first PC now only explains around 53% of variability and the next around 16%. For dimensionality reduction it seems valid to keep atleast the first two PC:s in this situation to represent the data in a low dimension space. I believe the scaled data would provide more intepretable data compared to the first raw data.
+
+
+
+### Tea data
+- now lets work with tea dataset from the FactoMineR package where individuals were asked about how they drink tea 
+```{r}
+library(FactoMineR)
+tea <- read.csv("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/tea.csv", stringsAsFactors = TRUE)
+dim(tea)
+str(tea)
+view(tea)
+```
+- Lets choose some columns to test with MCA, for example in this I'd like to test the following (frequency,SPC,Age_Q,how ) to see if perhaps we can see anythign when looking at how much tea the individuals drank what is their social standing and age and how they made their tea
+```{r}
+library(dplyr)
+# select the 'keep_columns' to create a new dataset
+tea_test <- tea[, c("age_Q", "frequency", "how", "SPC")]
+
 ```
 
-- Based on this unscaled data it is pretty hard to see anything on a biplot and the plot would need to be tinkered with. Howere we can quite clearly see that a lot of variables plot around the same area.
 
-- based on the summary it seems that for this unscaled data the first principal component explains almost all of the variance.
+- Lets perform a MCA on the data
+```{r}
+mca <- MCA(tea_test, graph = FALSE)
+plot.MCA(mca)
+```
+- This data is also a bit messy to look at due to all the observations. When looking at a MCA plot we would like to look at a multitude of different things. For example we see some clustering around certain categories which makes sence since the closer an observation is to a category means that it better represents the observation. In this case these clusters seem to happen around the social status of the people.
+- Another observation that could be made is that the way of drinking tea from a tea bag ( typically a fast and convenient method) seems to be close to the higher tea consumption/week categories. Though it is important to keep in mind that the distance to orgigin is also a factor and categories close to origin might not be well represented by MCA
+```{r}
+p <- summary(mca)
+
+```
+- Looking at the eigenvalues of MCA we see that there are no good dimensions for this MCA to explain variances with the highest being dim 1 with 12%. 
+- So these columns that I chose quickly seem to not be suitable together for an MCA analysis. 
 
 
