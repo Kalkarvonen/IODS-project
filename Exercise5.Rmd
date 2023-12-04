@@ -342,7 +342,7 @@ s <- summary(pca_human)
 pca_pr <- round(1*s$importance[2, ], digits = 5)
 
 # print out the percentages of variance
-
+pca_pr
 
 # create object pc_lab to be used as axis labels
 paste0(names(pca_pr), " (", pca_pr, "%)")
@@ -394,7 +394,7 @@ library(tidyr)
 keep_columns <- c("Tea", "How", "how", "sugar", "where", "lunch")
 
 # select the 'keep_columns' to create a new dataset
-tea_time <- select(tea, "change me!")
+tea_time <- select(tea, keep_columns)
 
 # look at the summaries and structure of the data
 
