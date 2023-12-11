@@ -1,0 +1,233 @@
+---
+title: "Chapter 6"
+author: "Kalle Karvonen"
+date: "2023-12-11"
+output: html_document
+---
+# Chapter 6: Analysis of longitudinal data
+
+```{r}
+# Data used is based on the data of Kimmo Vehkalahti from the following URL
+#https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/BPRS.txt
+#https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/rats.txt
+
+ratsl <-read.csv("C:/Users/Kalka/OneDrive/Desktop/Random/School/Open_Data/IODS-project/data/ratsl.csv")
+
+
+```
+
+```{r}
+# Loading in the data might lose categorical variables set as factors  so lets put them again
+
+ratsl$ID<- as.factor(ratsl$ID)
+ratsl$Group<-as.factor(ratsl$Group)
+head(ratsl)
+```
+
+- lets follow the course book chapter 8 analysis but use the rat dataset instead of BPRSL
+- The rat dataset describes the weight of 16 rats over 9 weeks of observation, The rats were assigned different diets out of 3 options. Weight is the weight of a rat in grams and time is in days
+```{r}
+# Initialising some packages that might be needed 
+library(ggplot2)
+library(readr)
+library(dplyr)
+library(tidyr)
+# Draw the plots
+ggplot(ratsl)+geom_line(aes(x=Time,y=Weight,group=ID,color=Group))
+```
+- a slight increase in weight can be seen in the groups, vut initial weight is much lower in group 1. Largest weight gain seems to be in group 2 
+
+- lets do a standardization and see if it changes anything in our graph
+```{r}
+# based on Ex6 code
+ratsl_std <- ratsl %>%
+  group_by(Group) %>%
+  mutate(stdweight = (Weight - mean(Weight))/sd(Weight)) %>%
+  ungroup()
+
+# Glimpse the data
+glimpse(ratsl_std)
+```
+```{r}
+# Plot again with the new data
+ggplot(ratsl_std)+geom_line(aes(x=Time,y=stdweight,group=ID,color=Group))+
+  labs(y = "Standardized weight")
+```
+- Now we can see the pattern of weight growth better which was hard to see previously due to high variation of starting weight.
+
+- Lets plot 
+```{r}
+# Summary data with mean and standard error of ratsl by treatment and week 
+# Function from the ex 6
+se <- function(x,n) { sd(x)/sqrt(n) }
+
+ratsl_s <- ratsl %>%
+  group_by(Group, Time) %>%
+  summarise(mean = mean(Weight), se = se(Weight, length(Weight)) ) %>%
+  ungroup()
+```
+```{r}
+glimpse(ratsl_s)
+```
+```{r}
+ggplot(ratsl_s, aes(x = Time, y = mean, color = Group)) +
+  geom_line() +
+  geom_point(aes(shape=Group), size=2) +
+  theme_bw() +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), width=2) 
+```
+- Variation in group 1 is smaller than the others especially group 2 has a large variation which might be due to an outlier group.
+
+- lets do a boxplot to see any potential outliers 
+
+```{r}
+ratsl_bp <- ratsl %>%
+  group_by(Group, ID) %>%
+  summarise(mean=mean(Weight) ) %>%
+  ungroup()
+```
+```{r}
+library(ggplot2)
+library(ggpubr)
+box1 <-ggplot(ratsl_bp, aes(x = ID, y = mean,color=Group,fill=Group)) +
+  geom_boxplot() +
+  stat_summary(fun = "mean", geom = "point", shape=23, size=3) +
+  scale_y_continuous(name = "mean(weight")
+
+box2 <-ggplot(ratsl_bp, aes(x = Group, y = mean, color=Group,fill=Group)) +
+  geom_boxplot() +
+  stat_summary(fun = "mean", geom = "point", shape=23, size=3,fill="black") +
+  scale_y_continuous(name = "mean(weight")
+
+ggarrange(box1,box2, common.legend=T)
+```
+- Based on this one could say that rats 2 12 and 13 are outliers when compared to their groups.
+
+- Filtering the outliers and trying again
+
+```{r}
+ratsl_fltr <- ratsl %>%
+  filter(ID != 2 & ID != 12 & ID != 13) %>%
+  group_by(Group, ID) %>%
+  summarise(mean=mean(Weight) ) %>%
+  ungroup()
+```
+```{r}
+library(ggplot2)
+library(ggpubr)
+box1 <-ggplot(ratsl_fltr, aes(x = ID, y = mean,color=Group,fill=Group)) +
+  geom_boxplot() +
+  stat_summary(fun = "mean", geom = "point", shape=23, size=3) +
+  scale_y_continuous(name = "mean(weight")
+
+box2 <-ggplot(ratsl_fltr, aes(x = Group, y = mean, color=Group,fill=Group)) +
+  geom_boxplot() +
+  stat_summary(fun = "mean", geom = "point", shape=23, size=3,fill="black") +
+  scale_y_continuous(name = "mean(weight")
+
+ggarrange(box1,box2, common.legend=T)
+```
+- Data seems to be now more uniform 
+- Lastly lets fit a linear model and analyze it
+
+```{r}
+# We need to filter the base data
+ratsl_fltr <- ratsl %>%
+  filter(ID != 2 & ID != 12 & ID != 13)
+
+ratsl_lm <- lm(data=ratsl_fltr,Weight~Time+Group)
+
+summary(ratsl_lm)
+```
+```{r}
+anova(ratsl_lm)
+```
+- there seems to be a very low p-value on all groups so the difference is significant
+-R squared of 0.994 says that 99.4% of our variation can be attributed to our variables 
+
+### Chapter 6 part 2 (BPRS data analysis)
+
+-The BPRS data consists of brief psychiatric rating scale values for 40 men
+ before and after treatment on different time frames on two different treatment groups
+ 
+
+```{r}
+BPRSL <-read.csv("C:/Users/Kalka/OneDrive/Desktop/Random/School/Open_Data/IODS-project/data/BPRSL.csv")
+BPRSL<- as.data.frame(BPRSL)
+BPRSL$subject <- as.factor(BPRSL$subject)
+BPRSL$treatment <- as.factor(BPRSL$treatment)
+
+summary(BPRSL)
+str(BPRSL)
+```
+- Treatment is a variable with either 1 or 2 which shows the treatment group
+- subject is an identifier for the individual
+- bprs is the brief psychiatric rating scale
+- week is the time  of data collection
+
+```{r}
+ggplot(BPRSL, aes(x = week, y = bprs, linetype = subject, color=treatment)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ treatment, labeller = label_both) +
+  theme(legend.position = "none") + 
+  scale_y_continuous(limits = c(min(BPRSL$bprs), max(BPRSL$bprs)))
+```
+- both groups have a downwards trend although some Ids show variability
+
+Fitting a linear model
+
+```{r}
+# basic linear model
+BPRS_lm <- lm(bprs ~ week + treatment, data = BPRSL)
+summary(BPRS_lm)
+```
+- Based on this there would seem to be no difference between treatments and both treatments seem to reduce the symtoms(bprs score)
+- how about other model
+```{r}
+library(lme4)
+library(Matrix)
+```
+
+```{r}
+# random intercept model
+
+BPRS_ref <- lmer(bprs ~ week + treatment + (1 | subject), data = BPRSL, REML = FALSE)
+summary(BPRS_ref)
+```
+```{r}
+#random intercept and slope model
+BPRS_ref2 <- lmer(bprs ~ week + treatment + (week | subject), data = BPRSL, REML = FALSE)
+summary(BPRS_ref2)
+```
+- finally lets fit a random intercept and slope model
+
+```{r}
+anova(BPRS_ref, BPRS_lm)
+```
+- Based on this there seems to be a statistically significant degrease in bprs score for subjects
+
+- lets test the last one
+
+```{r}
+anova(BPRS_ref2,BPRS_ref)
+```
+- Same can be seen in this but with a smaller P-value
+
+```{r}
+#Lets plot our model
+Fitted <- fitted(BPRS_ref2)
+BPRSL$Fitted <- Fitted
+
+ggplot(BPRSL, aes(x = week, y = Fitted, group = interaction(treatment, subject))) +
+  geom_line(aes(linetype = treatment, colour=treatment)) +
+  scale_x_continuous(name = "weeks")+
+  scale_y_continuous(name = "Fitted BPRS") +
+  theme(legend.position = "top")  +
+  ggtitle("Fitted models for BPRS data")
+
+
+```
+- From this it would seem that both treatments reduce the symptoms and neither seems to be better than the other.
+
+#### last assignment done
